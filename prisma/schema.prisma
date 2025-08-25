@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CONSULTOR
+}
+
+enum StatusAssociado {
+  ATIVO
+  INADIMPLENTE
+  CANCELADO
+}
+
+model Usuario {
+  id           String  @id @default(cuid())
+  nome         String
+  email        String  @unique
+  senhaHash    String
+  role         Role    @default(CONSULTOR)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  Consultor    Consultor?
+}
+
+model Consultor {
+  id           String  @id @default(cuid())
+  usuarioId    String  @unique
+  usuario      Usuario @relation(fields: [usuarioId], references: [id])
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  Associacoes  Associacao[]
+  Resumos      ResumoMensalComissao[]
+}
+
+model Associado {
+  id           String  @id @default(cuid())
+  nome         String
+  documento    String  @unique
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  Associacoes  Associacao[]
+}
+
+model Associacao {
+  id                 String  @id @default(cuid())
+  consultorId        String
+  associadoId        String
+  numeroContrato     String?  @unique
+  status             StatusAssociado @default(ATIVO)
+  valorMensalidade   Decimal @db.Decimal(12,2)
+  dataAssociacao     DateTime
+  dataStatusMudanca  DateTime @default(now())
+  consultor          Consultor @relation(fields: [consultorId], references: [id])
+  associado          Associado @relation(fields: [associadoId], references: [id])
+  Pagamentos         Pagamento[]
+
+  @@index([consultorId, status])
+  @@index([consultorId, dataAssociacao])
+}
+
+model Pagamento {
+  id              String  @id @default(cuid())
+  associacaoId    String
+  competencia     DateTime
+  valorPago       Decimal  @db.Decimal(12,2)
+  pagoEm          DateTime?
+  status          String
+  associacao      Associacao @relation(fields: [associacaoId], references: [id])
+
+  @@index([competencia])
+}
+
+model ResumoMensalComissao {
+  id              String  @id @default(cuid())
+  consultorId     String
+  competencia     DateTime
+  novosNoMes      Int
+  totalAtivos     Int
+  aliquota        Decimal @db.Decimal(5,2)
+  baseCalculo     Decimal @db.Decimal(14,2)
+  valorComissao   Decimal @db.Decimal(14,2)
+  consolidado     Boolean @default(false)
+  consolidadoEm   DateTime?
+  consolidadoPor  String?
+  consolidadoPorNome  String?
+  consolidadoPorEmail String?
+  geradoEm        DateTime @default(now())
+  consultor       Consultor @relation(fields: [consultorId], references: [id])
+
+  @@unique([consultorId, competencia])
+  @@index([competencia])
+}

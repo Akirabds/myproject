@@ -1,0 +1,46 @@
+{
+  "name": "seguradora-comissoes",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Remove-Item Env:HTTP_PROXY,Env:HTTPS_PROXY,Env:http_proxy,Env:https_proxy -ErrorAction SilentlyContinue; npx next dev --hostname 127.0.0.1 --port 3000\"",
+    "build": "next build",
+    "tasks": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\tasks.ps1",
+    "smoke": "npm run tasks -- smoke",
+    "seed:local": "npm run tasks -- seed",
+    "apply:dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\apply-migrate-seed.ps1",
+    "start": "next start",
+    "migrate": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev --name init",
+    "seed": "ts-node --transpile-only prisma/seed.ts",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@prisma/client": "4.16.0",
+    "bcryptjs": "^2.4.3",
+    "next": "13.4.10",
+    "next-auth": "^4.22.1",
+    "ngrok": "^4.3.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-hook-form": "7.45.0",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "20.3.1",
+    "@types/react": "19.1.10",
+    "autoprefixer": "^10.4.14",
+    "eslint": "8.47.0",
+    "eslint-config-next": "13.4.10",
+    "postcss": "^8.4.24",
+    "prisma": "4.16.0",
+    "tailwindcss": "^3.4.0",
+    "ts-node": "10.9.1",
+    "typescript": "5.2.2",
+    "vitest": "^3.2.4"
+  }
+}
