@@ -7,10 +7,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!session || (session as any).user.role !== 'ADMIN') return res.status(403).json({ error: 'forbidden' })
 
   if (req.method === 'GET') {
-    const associados = await prisma.associado.findMany({ include: { Associacoes: true } })
-    // reduzir para mostrar totais por associado
-    const result = associados.map(a => ({ id: a.id, nome: a.nome, totalAssociacoes: a.Associacoes.length }))
-    return res.json(result)
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+  const where = q ? { OR: [{ nome: { contains: q, mode: 'insensitive' } }, { documento: { contains: q, mode: 'insensitive' } }] } : {}
+  const associados = await prisma.associado.findMany({ where, include: { Associacoes: true } })
+  // reduzir para mostrar totais por associado
+  const result = associados.map(a => ({ id: a.id, nome: a.nome, documento: a.documento, totalAssociacoes: a.Associacoes.length }))
+  return res.json(result)
   }
 
   if (req.method === 'POST') {

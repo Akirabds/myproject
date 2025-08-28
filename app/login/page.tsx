@@ -16,11 +16,13 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     try {
-      // Fazer o redirect pelo próprio NextAuth garante que o cookie seja definido pelo servidor
-      await signIn('credentials', { redirect: true, email, password, callbackUrl: '/consultor/dashboard' })
-      // não esperamos retorno quando redirect: true; o navegador será redirecionado pelo NextAuth
-      return
-    
+      const result = await signIn('credentials', { redirect: false, email, password, callbackUrl: '/consultor/dashboard' })
+      if (result?.error) {
+        setError(result.error)
+      } else if (result?.ok) {
+        // Login bem-sucedido: força redirecionamento direto para a dashboard
+        router.push('/consultor/dashboard')
+      }
     } catch (err: any) {
       setError(err?.message || 'Erro inesperado')
     } finally {

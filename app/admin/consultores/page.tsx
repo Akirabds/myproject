@@ -4,6 +4,7 @@ import Toast from '../../../src/components/Toast'
 
 export default function AdminConsultoresPage() {
   const [consultores, setConsultores] = React.useState<any[]>([])
+  const [q, setQ] = React.useState('')
   const [associados, setAssociados] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(false)
   const [toast, setToast] = React.useState<{ msg: string; type?: 'info' | 'success' | 'error' } | null>(null)
@@ -22,10 +23,11 @@ export default function AdminConsultoresPage() {
 
   React.useEffect(() => { loadConsultores() }, [])
 
-  const loadConsultores = async () => {
+  const loadConsultores = async (filteredQ?: string) => {
     setLoading(true)
     try {
-      const r = await fetch('/api/admin/consultores')
+      const qParam = (filteredQ !== undefined ? filteredQ : q) || ''
+      const r = await fetch(`/api/admin/consultores${qParam ? `?q=${encodeURIComponent(qParam)}` : ''}`)
       if (!r.ok) throw new Error('Erro')
       setConsultores(await r.json())
     } catch (e) { setToast({ msg: 'Falha ao carregar consultores', type: 'error' }) }
@@ -35,7 +37,7 @@ export default function AdminConsultoresPage() {
   const loadAssociados = async () => {
     setLoading(true)
     try {
-      const r = await fetch('/api/admin/associados')
+  const r = await fetch(`/api/admin/associados${q ? `?q=${encodeURIComponent(q)}` : ''}`)
       if (!r.ok) throw new Error('Erro')
       setAssociados(await r.json())
     } catch (e) { setToast({ msg: 'Falha ao carregar associados', type: 'error' }) }
@@ -81,7 +83,12 @@ export default function AdminConsultoresPage() {
       {tab === 'consultores' && (
         <div>
           <div className="overflow-auto mb-4">
-            <table className="w-full text-sm">
+                <div className="flex gap-2 mb-2">
+                  <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') loadConsultores() }} placeholder="Buscar consultores por nome ou email" className="border p-2 rounded w-full md:w-1/3" />
+                  <button className="px-3 py-1 bg-slate-600 text-white rounded" onClick={() => loadConsultores()}>Filtrar</button>
+                  <button className="px-3 py-1 bg-gray-200 text-gray-700 rounded" onClick={() => { setQ(''); loadConsultores('') }}>Limpar</button>
+                </div>
+                <table className="w-full text-sm">
               <thead>
                 <tr className="text-left"><th>Nome</th><th>Email</th></tr>
               </thead>
@@ -107,12 +114,17 @@ export default function AdminConsultoresPage() {
 
       {tab === 'associados' && (
         <div>
+          <div className="mb-2 flex gap-2">
+            <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') loadAssociados() }} placeholder="Buscar por nome ou documento" className="border p-2 rounded w-full md:w-1/3" />
+            <button className="px-3 py-1 bg-slate-600 text-white rounded" onClick={() => loadAssociados()}>Filtrar</button>
+            <button className="px-3 py-1 bg-gray-200 text-gray-700 rounded" onClick={() => { setQ(''); loadAssociados() }}>Limpar</button>
+          </div>
           <div className="overflow-auto mb-4">
             <table className="w-full text-sm">
               <thead><tr className="text-left"><th>Nome</th><th>Consultor</th></tr></thead>
               <tbody>
                 {associados.map(a => (
-                  <tr key={a.id} className="border-t"><td className="py-2">{a.nome}</td><td>{a.consultor?.usuario?.nome ?? a.consultorId}</td></tr>
+                  <tr key={a.id} className="border-t"><td className="py-2">{a.nome} {a.documento ? `(${a.documento})` : ''}</td><td>{a.consultor?.usuario?.nome ?? a.consultorId}</td></tr>
                 ))}
               </tbody>
             </table>

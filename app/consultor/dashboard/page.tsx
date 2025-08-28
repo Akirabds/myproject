@@ -9,30 +9,37 @@ type Resumo = {
   aliquota: number
   baseCalculo: number
   valorComissao: number
+  totalInativos?: number
+  valoresNoMes?: number
 }
 
 export default function DashboardPage() {
   const { data: session } = useSession()
   const isAdmin = !!(session && (session as any).user && (session as any).user.role === 'ADMIN')
   const [resumo, setResumo] = React.useState<Resumo | null>(null)
-  const [associados, setAssociados] = React.useState<any[]>([])
   const [competencia, setCompetencia] = React.useState(() => new Date().toISOString().slice(0, 10))
   const [loading, setLoading] = React.useState(false)
-  const [q, setQ] = React.useState('')
+  // ...existing code...
   const [toast, setToast] = React.useState<{ msg: string; type?: 'info' | 'success' | 'error' } | null>(null)
   const [consolidado, setConsolidado] = React.useState(false)
   const [consolidadoEm, setConsolidadoEm] = React.useState<string | null>(null)
   const [consolidadoPor, setConsolidadoPor] = React.useState<string | null>(null)
   const [consolidadoPorEmail, setConsolidadoPorEmail] = React.useState<string | null>(null)
 
-  async function load(filteredQ?: string) {
+  async function load() {
     setLoading(true)
     const comp = new Date(competencia).toISOString().slice(0, 10)
-    const qParam = (filteredQ !== undefined ? filteredQ : q) || ''
-    const r = await fetch(`/api/consultores/me/dashboard?competencia=${comp}${qParam ? `&q=${encodeURIComponent(qParam)}` : ''}`)
+    const r = await fetch(`/api/consultores/me/dashboard?competencia=${comp}`)
     const data = await r.json()
-  setResumo({ novosNoMes: data.novosNoMes, totalAtivos: data.totalAtivos, aliquota: data.aliquota, baseCalculo: data.baseCalculo, valorComissao: data.valorComissao } as Resumo)
-  setAssociados(data.associados || [])
+  setResumo({
+    novosNoMes: data.novosNoMes,
+    totalAtivos: data.totalAtivos,
+    aliquota: data.aliquota,
+    baseCalculo: data.baseCalculo,
+    valorComissao: data.valorComissao,
+    totalInativos: data.totalInativos || 0,
+    valoresNoMes: data.valoresNoMes || 0,
+  } as Resumo)
   setConsolidado(!!data.consolidado)
   setConsolidadoEm(data.consolidadoEm || null)
   setConsolidadoPor(data.consolidadoPor || null)
@@ -75,18 +82,12 @@ export default function DashboardPage() {
 
   const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
-  function maskDocumento(doc?: string) {
-    if (!doc) return ''
-    // deixa apenas os 4 últimos dígitos visíveis
-    const cleaned = doc.replace(/\D/g, '')
-    if (cleaned.length <= 4) return cleaned
-    return '***.***.' + cleaned.slice(-4)
-  }
+  // ...existing code...
 
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold mb-4">Consultor</h1>
+        <h3 className="text-lg font-medium mb-4">Totais de Consultores</h3>
         <div className="space-x-2">
           <button onClick={handleRecalcular} className="px-3 py-1 bg-sky-600 text-white rounded" disabled={loading || consolidado}>Recalcular</button>
           {isAdmin && (
@@ -110,38 +111,17 @@ export default function DashboardPage() {
         <div className="p-4 border rounded">Comissão estimada: {resumo ? fmt.format(resumo.valorComissao) : '--'}</div>
       </div>
 
-      <div>
-        <h2 className="text-lg font-medium mb-2">Associados</h2>
-        <div className="flex gap-2 mb-2">
-          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') load() }} placeholder="Buscar por contrato, nome ou documento" className="border p-2 rounded w-full md:w-1/3" />
-          <button className="px-3 py-1 bg-slate-600 text-white rounded" onClick={() => load()}>Filtrar</button>
-          <button className="px-3 py-1 bg-gray-200 text-gray-700 rounded" onClick={() => { setQ(''); load('') }}>Limpar</button>
-        </div>
-        <div className="overflow-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th>Número contrato</th>
-                <th>Nome</th>
-                <th>Documento</th>
-                <th>Status</th>
-                <th>Mensalidade</th>
-              </tr>
-            </thead>
-    <tbody>
-        {associados.map(a => (
-                <tr key={a.id} className="border-t">
-                  <td className="py-2">{a.numeroContrato ?? '-'}</td>
-                  <td className="py-2">{a.associado?.nome ?? a.associadoId}</td>
-          <td>{a.associado?.documento ? maskDocumento(a.associado.documento) : a.associadoId}</td>
-                  <td>{a.status}</td>
-                  <td>{fmt.format(Number(a.valorMensalidade || 0))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="mb-6">
+        <h3 className="text-lg font-medium mb-2">Totais de Associados</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="p-4 border rounded">Novos no mês: {resumo ? resumo.novosNoMes : '--'}</div>
+          <div className="p-4 border rounded">Total ativos: {resumo ? resumo.totalAtivos : '--'}</div>
+          <div className="p-4 border rounded">Total inativos: {resumo ? resumo.totalInativos : '--'}</div>
+          <div className="p-4 border rounded">Valores no mês: {resumo ? fmt.format(resumo.valoresNoMes || 0) : '--'}</div>
         </div>
       </div>
+
+  {/* Associação/listagem de associados removida do dashboard conforme solicitado */}
   {toast && <Toast message={toast.msg} type={toast.type} />}
     </div>
   )
