@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+  "dev": "next dev --hostname 127.0.0.1 --port 3000",
     "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Remove-Item Env:HTTP_PROXY,Env:HTTPS_PROXY,Env:http_proxy,Env:https_proxy -ErrorAction SilentlyContinue; npx next dev --hostname 127.0.0.1 --port 3000\"",
     "build": "next build",
     "tasks": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\tasks.ps1",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@prisma/client": "4.16.0",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^17.2.1",
     "next": "13.4.10",
     "next-auth": "^4.22.1",
     "ngrok": "^4.3.3",

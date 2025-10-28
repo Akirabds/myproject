@@ -7,6 +7,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!session || (session as any).user.role !== 'ADMIN') return res.status(403).json({ error: 'forbidden' })
 
   if (req.method === 'GET') {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+    if (q) {
+      const consultores = await prisma.consultor.findMany({
+        where: {
+          usuario: {
+            OR: [
+              { nome: { contains: q, mode: 'insensitive' } },
+              { email: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+        },
+        include: { usuario: true },
+      })
+      return res.json(consultores)
+    }
     const consultores = await prisma.consultor.findMany({ include: { usuario: true } })
     return res.json(consultores)
   }
